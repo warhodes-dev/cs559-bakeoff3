@@ -10,7 +10,8 @@
 
 
 <script type="text/processing" data-processing-target="mycanvas">
-final int DPIofYourDeviceScreen = 115; //you will need to measure or look up the DPI or PPI of your device/browser to make sure you get the right scale!!
+
+  final int DPIofYourDeviceScreen = 115; //you will need to measure or look up the DPI or PPI of your device/browser to make sure you get the right scale!!
 final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
 
 int totalTrialNum = 2; //the total number of phrases to be tested - set this low for testing. Might be ~10 for the real bakeoff!
@@ -28,21 +29,100 @@ float viewportX;
 float viewportY;
 
 ArrayList<Button> buttons = new ArrayList<Button>();
+ArrayList<SubButton> subbuttons = new ArrayList<SubButton>();
 Button activeButton = null;
+SimpleButton spaceButton = null;
+SimpleButton backButton = null;
+
+Pair[][] grid = new Pair[3][3];
 
 //Variables for my silly implementation. You can delete this:
 int currentLetter = int('a');
 
-class Button {
-  char left, right, up, down, on;
-  boolean active;
-  float width = sizeOfInputArea / 3;
-  float height = sizeOfInputArea / 3;
-  float x, y;
+class Pair {
+  float x;
+  float y;
   
-  Button(float x, float y, char on, char left, char right, char up, char down) {
+  Pair(float x, float y) {
     this.x = x;
     this.y = y;
+  }
+};
+
+class SimpleButton {
+  char c;
+  int x_c, y_c, mode;
+  float w = sizeOfInputArea / 3;
+  float h = sizeOfInputArea / 3;
+  boolean active;
+  
+  SimpleButton(int x, int y, char c, int mode) {
+    this.x_c = x;
+    this.y_c = y;
+    this.c = c;
+    this.mode = mode;
+  }
+  
+  void drawSelf() {
+    onTap(); // side effects may vary
+    
+    if(isHovered() && subbuttons.size() == 0)
+      fill(135);
+    else
+      fill(100);
+      
+    ellipse(x(), y(), w, h);
+    
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(16);
+    text(c, x(), y());
+  }
+  
+  void onTap() {
+    if (mouseX >= x() - w / 2 && mouseX <= x() + w / 2 && mouseY >= y() - h / 2 && mouseY <= y() + h / 2) {
+      if (mousePressed && !active && activeButton == null) {
+        active = true;
+        switch (mode) {
+          case 1: // Backspace button
+            if (currentTyped.length() != 0)
+              currentTyped = currentTyped.substring(0, currentTyped.length()-1);
+            break;
+          case 2: // Space button
+            currentTyped = currentTyped + " ";
+            break;
+        }
+      }
+    }
+  }
+  
+  boolean isHovered() {
+    if (mouseX >= x() - w / 2 && mouseX <= x() + w / 2 && mouseY >= y() - h / 2 && mouseY <= y() + h / 2) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  float x() {
+    return grid[x_c][y_c].x;
+  }
+  
+  float y() {
+    return grid[x_c][y_c].y; 
+  }
+}
+
+class Button {
+  char left, right, up, down, on;
+  boolean active, hovered;
+  float w = sizeOfInputArea / 3;
+  float h = sizeOfInputArea / 3;
+  int x_c, y_c;
+  
+  Button(int x, int y, char on, char left, char right, char up, char down) {
+    this.x_c = x;
+    this.y_c = y;
     this.on = on;
     this.left = left;
     this.right = right;
@@ -50,72 +130,157 @@ class Button {
     this.down = down;
     this.active = false;
   }
-   
+  
+
+  
+  void drawSelf() {
+    isTapped(); // side effects may vary
+    
+    if(isHovered() && subbuttons.size() == 0)
+      fill(135);
+    else
+      fill(100);
+    
+    ellipse(x(), y(), w, h);
+    
+    fill(255);
+    float textOffset = sizeOfInputArea / 9;
+    textAlign(CENTER, CENTER);
+    textSize(16);
+    text(toUpperCase(on), x(), y());
+    
+    if (left != '~') {
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(10);
+      text(toUpperCase(left), x() - textOffset, y());
+    }
+    
+    if (right != '~') {
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(10);
+      text(toUpperCase(right), x() + textOffset, y());
+    }
+    
+    if (up != '~') {
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(10);
+      text(toUpperCase(up), x(), y() - textOffset);
+    }
+    
+    if (down != '~') {
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(10);
+      text(toUpperCase(down), x(), y() + textOffset);
+    }
+  }
+  
   boolean isTapped() {
-    if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height) {
-      if (mousePressed) {
+    if (mouseX >= x() - w / 2 && mouseX <= x() + w / 2 && mouseY >= y() - h / 2 && mouseY <= y() + h / 2) {
+      if (mousePressed && activeButton == null) {
         active = true;
+        activeButton = this;
+        spawnSubButtons();
       }
     }
     return active;
   }
   
+  boolean isHovered() {
+    if (mouseX >= x() - w / 2 && mouseX <= x() + w / 2 && mouseY >= y() - h / 2 && mouseY <= y() + h / 2) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  
+  
+  void spawnSubButtons() {
+    if (left != '~') {
+      subbuttons.add(new SubButton(x_c - 1, y_c, left)); 
+    }
+    if (right != '~') {
+      subbuttons.add(new SubButton(x_c + 1, y_c, right)); 
+    }
+    if (up != '~') {
+      subbuttons.add(new SubButton(x_c, y_c - 1, up)); 
+    }
+    if (down != '~') {
+      subbuttons.add(new SubButton(x_c, y_c + 1, down)); 
+    }
+    subbuttons.add(new SubButton(x_c, y_c, on));
+  }
+  
+  float x() {
+    return grid[x_c][y_c].x;
+  }
+  
+  float y() {
+    return grid[x_c][y_c].y; 
+  }
+};
+
+class SubButton {
+  char c;
+  boolean active;
+  float w = sizeOfInputArea / 3;
+  float h = sizeOfInputArea / 3;
+  int x_c, y_c;
+  SubButton(int x, int y, char c) {
+    this.x_c = x;
+    this.y_c = y;
+    this.c = c;
+  }
+  
+  void drawSelf() {
+    if (isHovered())
+      fill(70, 120, 150);
+    else
+      fill(45, 90, 115);
+    ellipse(x(), y(), w, h);
+    
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(16);
+    text(toUpperCase(c), x(), y());
+  }
+  
+  boolean isHovered() {
+    if (mouseX >= x() - w / 2 && mouseX <= x() + w / 2 && mouseY >= y() - h / 2 && mouseY <= y() + h / 2) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  float x() {
+    return grid[x_c][y_c].x;
+  }
+  
+  float y() {
+    return grid[x_c][y_c].y; 
+  }
 };
 
 void drawKeypad() {
+  for (int i = 0; i < buttons.size(); i++) {
+    Button b = buttons.get(i);
+    b.drawSelf();
+  }
+  
+  backButton.drawSelf();
+  spaceButton.drawSelf();
+  
+  for (int i = 0; i < subbuttons.size(); i++) {
+    SubButton sb = subbuttons.get(i);
+    sb.drawSelf();
+  }
+  
 
-  int baseColor = 40;
-  for (int i = 0; i < buttons.size(); i++) {
-    fill(baseColor, 0, 0);
-    Button b = buttons.get(i);
-    
-    rect(b.x, b.y, b.width, b.height);
-    baseColor += 30;
-    
-    fill(255);
-    float textOffset = sizeOfInputArea / 6;
-    textAlign(CENTER, CENTER);
-    textSize(16);
-    text(toUpperCase(b.on), b.x + textOffset, b.y + textOffset);
-    
-    if (b.left != '~') {
-      fill(255);
-      textAlign(CENTER, CENTER);
-      textSize(10);
-      text(toUpperCase(b.left), b.x + textOffset / 4, b.y + textOffset);
-    }
-    
-    if (b.right != '~') {
-      fill(255);
-      textAlign(CENTER, CENTER);
-      textSize(10);
-      text(toUpperCase(b.right), b.x + textOffset + 3*(textOffset / 4), b.y + textOffset);
-    }
-    
-    if (b.up != '~') {
-      fill(255);
-      textAlign(CENTER, CENTER);
-      textSize(10);
-      text(toUpperCase(b.up), b.x + textOffset, b.y + textOffset / 4);
-    }
-    
-    if (b.down != '~') {
-      fill(255);
-      textAlign(CENTER, CENTER);
-      textSize(10);
-      text(toUpperCase(b.down), b.x + textOffset, b.y + textOffset + 3*(textOffset / 4));
-    }
-  }
-  
-  for (int i = 0; i < buttons.size(); i++) {
-    Button b = buttons.get(i);
-    if (b.isTapped()) {
-      activeButton = b;
-      break;
-    }
-  }
-  
-  
 }
 
 //You can add stuff in here. This is just a basic implementation.
@@ -124,8 +289,20 @@ void setup()
   //rectMode(CENTER);
   size(375, 500); //Sets the size of the app. You should modify this to your device's native size. Many phones today are 1080 wide by 1920 tall.
   noStroke(); //my code doesn't use any strokes.
-  viewportX = (width/2) - sizeOfInputArea/2;
-  viewportY = (height/2) - sizeOfInputArea/2;
+  
+  // Establish the grid of coordinates
+  viewportX = (width/2) - sizeOfInputArea/2 + sizeOfInputArea/6;
+  viewportY = (height/2) - sizeOfInputArea/2 + sizeOfInputArea/6;
+  float third = sizeOfInputArea/3;
+  grid[0][0] = new Pair(viewportX           , viewportY);
+  grid[1][0] = new Pair(viewportX + third   , viewportY);
+  grid[2][0] = new Pair(viewportX + 2*third , viewportY);
+  grid[0][1] = new Pair(viewportX           , viewportY + third);
+  grid[1][1] = new Pair(viewportX + third   , viewportY + third);
+  grid[2][1] = new Pair(viewportX + 2*third , viewportY + third);
+  grid[0][2] = new Pair(viewportX           , viewportY + 2*third);
+  grid[1][2] = new Pair(viewportX + third   , viewportY + 2*third);
+  grid[2][2] = new Pair(viewportX + 2*third , viewportY + 2*third);
 
   //randomize the phrase order
   for (int i=0; i<phrases.length; i++) {
@@ -137,14 +314,15 @@ void setup()
   println("viewport " + viewportX);
   println("center " + width / 2);
   println("inputArea " + sizeOfInputArea);
-  float third = sizeOfInputArea/3;
-  Button top_left    = new Button(viewportX           , viewportY, 'a', '~', 'b', '~', 'c');  
-  Button top_middle  = new Button(viewportX + third   , viewportY, 'e', 'd', 'g', '~', 'f');  
-  Button top_right   = new Button(viewportX + 2*third , viewportY, 'i', 'h', '~', '~', 'j');  
-  Button middle_left = new Button(viewportX           , viewportY + third, 'l', '~', 'm', 'k', 'n');  
-  Button middle      = new Button(viewportX + third   , viewportY + third, 'o', 'p', 'r', 'q', 's');  
-  Button middle_right= new Button(viewportX + 2*third , viewportY + third, 'u', 't', '~', 'w', 'v'); 
-  Button bottom_left = new Button(viewportX           , viewportY + 2*third, 'y', '~', 'z', 'x', '~');
+  //                              Grid   On   Left  Right  Up   Down
+  //                              ----  ----  ----  ----  ----  ----
+  Button top_left    = new Button(0, 0, 'a',  '~',  'b',  '~',  'c');  
+  Button top_middle  = new Button(1, 0, 'e',  'd',  'g',  '~',  'f');  
+  Button top_right   = new Button(2, 0, 'i',  'h',  '~',  '~',  'j');  
+  Button middle_left = new Button(0, 1, 'l',  '~',  'm',  'k',  'n');  
+  Button middle      = new Button(1, 1, 'o',  'p',  'r',  'q',  's');  
+  Button middle_right= new Button(2, 1, 'u',  't',  '~',  'w',  'v'); 
+  Button bottom_left = new Button(0, 2, 'y',  '~',  'z',  'x',  '~');
   
   buttons.add(top_left);
   buttons.add(top_middle);
@@ -153,6 +331,9 @@ void setup()
   buttons.add(middle);
   buttons.add(middle_right);
   buttons.add(bottom_left);
+  
+  spaceButton = new SimpleButton(1, 2, '_', 2);
+  backButton = new SimpleButton(2, 2, '<', 1);
 }
 
 //You can modify stuff in here. This is just a basic implementation.
@@ -183,7 +364,7 @@ void draw()
 
 
   //draw 1" watch area
-  fill(100);
+  fill(60);
   rect(width/2-sizeOfInputArea/2, height/2-sizeOfInputArea/2, sizeOfInputArea, sizeOfInputArea); //input area should be 1" by 1"
 
   //check to see if the user hasn't started yet
@@ -202,6 +383,7 @@ void draw()
   //if start time does not equal zero, it means we must be in the trials
   if (startTime!=0)
   {
+    textSize(14);
     //you can very slightly adjust the position of the target/entered phrases and next button
     textAlign(LEFT); //align the text left
     fill(128);
@@ -211,10 +393,10 @@ void draw()
     text("Entered:  " + currentTyped + "|", 70, 140); //draw what the user has entered thus far 
 
     //draw very basic next button
-    fill(255, 0, 0);
-    rect(200, 340, 100, 100); //draw next button
+    fill(200, 0, 0);
+    rect(200, 340, 100, 50); //draw next button
     fill(255);
-    text("NEXT > ", 650, 650); //draw next label
+    text("NEXT > ", 210, 350); //draw next label
 
     //my draw code that you should replace.
     drawKeypad();
@@ -266,6 +448,23 @@ void mousePressed()
     nextTrial(); //if so, advance to next trial
   }
 
+}
+
+void mouseReleased() {
+   for (int i = 0; i < buttons.size(); i++) {
+     buttons.get(i).active = false;
+   }
+   
+   for (int i = 0; i < subbuttons.size(); i++) {
+     if (subbuttons.get(i).isHovered())
+       currentTyped = currentTyped + subbuttons.get(i).c;
+   }
+   
+   subbuttons.clear();
+   activeButton = null;
+   
+   backButton.active = false;
+   spaceButton.active = false;
 }
 
 
