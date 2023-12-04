@@ -10,8 +10,6 @@
 
 
 <script type="text/processing" data-processing-target="mycanvas">
-
-
 final int DPIofYourDeviceScreen = 115; //you will need to measure or look up the DPI or PPI of your device/browser to make sure you get the right scale!!
 final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
 
@@ -78,34 +76,34 @@ void drawKeypad() {
     float textOffset = sizeOfInputArea / 6;
     textAlign(CENTER, CENTER);
     textSize(16);
-    text(Character.toUpperCase(b.on), b.x + textOffset, b.y + textOffset);
+    text(toUpperCase(b.on), b.x + textOffset, b.y + textOffset);
     
     if (b.left != '~') {
       fill(255);
       textAlign(CENTER, CENTER);
       textSize(10);
-      text(Character.toUpperCase(b.left), b.x + textOffset / 4, b.y + textOffset);
+      text(toUpperCase(b.left), b.x + textOffset / 4, b.y + textOffset);
     }
     
     if (b.right != '~') {
       fill(255);
       textAlign(CENTER, CENTER);
       textSize(10);
-      text(Character.toUpperCase(b.right), b.x + textOffset + 3*(textOffset / 4), b.y + textOffset);
+      text(toUpperCase(b.right), b.x + textOffset + 3*(textOffset / 4), b.y + textOffset);
     }
     
     if (b.up != '~') {
       fill(255);
       textAlign(CENTER, CENTER);
       textSize(10);
-      text(Character.toUpperCase(b.up), b.x + textOffset, b.y + textOffset / 4);
+      text(toUpperCase(b.up), b.x + textOffset, b.y + textOffset / 4);
     }
     
     if (b.down != '~') {
       fill(255);
       textAlign(CENTER, CENTER);
       textSize(10);
-      text(Character.toUpperCase(b.down), b.x + textOffset, b.y + textOffset + 3*(textOffset / 4));
+      text(toUpperCase(b.down), b.x + textOffset, b.y + textOffset + 3*(textOffset / 4));
     }
   }
   
@@ -331,7 +329,9 @@ void nextTrial()
   //currentPhrase = "abc"; // uncomment this to override the test phrase (useful for debugging)
 }
 
-
+char toUpperCase(char c) {
+  return char(c & 0x5f); 
+}
 
 
 //=========SHOULD NOT NEED TO TOUCH THIS METHOD AT ALL!==============
@@ -826,6 +826,7 @@ String[] phrases ={"my watch fell in the water",
   "experience is hard to come by", 
   "everyone wants to win the lottery", 
   "the picket line gives me the chills"};
+
 </script>
 <canvas id="mycanvas"></canvas>
 
